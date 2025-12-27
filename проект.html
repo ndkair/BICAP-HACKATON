@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SchoolIT — платформа IT-советов (MVP платежи)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+  <header class="bg-indigo-600 text-white p-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold">SchoolIT</h1>
+        <p class="text-sm opacity-90">IT-советы от школьников — демо с платными услугами</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="user-info" class="text-sm"></div>
+        <button id="btn-logout" class="hidden bg-white text-indigo-600 px-3 py-1 rounded" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
+
+    <!-- Left: Actions / profile -->
+    <section class="col-span-1 bg-white rounded-2xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-2">Профиль / Авторизация</h2>
+
+      <div id="auth-block">
+        <input id="reg-name" placeholder="Имя" class="w-full border p-2 rounded mb-2" />
+        <select id="reg-role" class="w-full border p-2 rounded mb-2">
+          <option value="student">Ученик</option>
+          <option value="mentor">Наставник</option>
+          <option value="admin">Администратор</option>
+        </select>
+        <button class="bg-indigo-600 text-white w-full py-2 rounded" onclick="register()">Зарегистрироваться</button>
+        <hr class="my-3" />
+        <input id="login-name" placeholder="Войти как (имя)" class="w-full border p-2 rounded mb-2" />
+        <button class="bg-green-600 text-white w-full py-2 rounded" onclick="login()">Войти</button>
+      </div>
+
+      <div id="profile-block" class="hidden">
+        <p class="font-semibold">Пользователь: <span id="profile-name"></span></p>
+        <p>Роль: <span id="profile-role"></span></p>
+        <p>Баллы: <span id="profile-points"></span></p>
+        <p>Кредиты (₸): <span id="profile-credits"></span></p>
+        <p>Уровень: <span id="profile-level"></span></p>
+        <div class="mt-3">
+          <button class="bg-yellow-500 text-white px-3 py-1 rounded" onclick="dailyBonus()">Ежедневный вход (+1 балл)</button>
+          <button class="bg-amber-600 text-white px-3 py-1 rounded ml-2" onclick="openExchange()">Обменять баллы на ₸</button>
+        </div>
+        <div id="exchange-block" class="mt-3 hidden">
+          <p class="text-sm">Курс: <strong>1 балл = 5 ₸</strong></p>
+          <input id="exchange-amount" type="number" min="1" placeholder="Сколько баллов обменять" class="w-full border p-2 rounded mb-2" />
+          <button class="bg-indigo-600 text-white w-full py-2 rounded" onclick="exchangePoints()">Обменять</button>
+        </div>
+
+        <div class="mt-4">
+          <h3 class="font-semibold">Пополнение (DEMO)</h3>
+          <input id="buy-amount" type="number" min="100" placeholder="Сумма в ₸ (минимум 100)" class="w-full border p-2 rounded mb-2" />
+          <button class="bg-sky-600 text-white w-full py-2 rounded" onclick="demoPay()">Оплатить (DEMO)</button>
+        </div>
+
+        <div id="mentor-actions" class="mt-4 hidden">
+          <h3 class="font-semibold">Наставник: добавить курс</h3>
+          <input id="course-title" placeholder="Название курса" class="w-full border p-2 rounded mb-2" />
+          <input id="course-price" type="number" placeholder="Цена (₸)" class="w-full border p-2 rounded mb-2" />
+          <button class="bg-emerald-600 text-white w-full py-2 rounded" onclick="createCourse()">Создать курс</button>
+        </div>
+
+        <div id="admin-panel-link" class="mt-4 hidden">
+          <button class="bg-red-600 text-white w-full py-2 rounded" onclick="openAdmin()">Открыть панель администратора</button>
+        </div>
+
+      </div>
+
+      <hr class="my-4" />
+
+      <h3 class="font-semibold">Информация</h3>
+      <ul class="text-sm mt-2 space-y-1">
+        <li>✅ Баллы можно обменять на кредиты (₸)</li>
+        <li>✅ Кредиты используются для оплаты консультаций, подписок и курсов</li>
+        <li>✅ Платформа удерживает комиссию: консультации 25%, курсы 20%</li>
+      </ul>
+    </section>
+
+    <!-- Center: Q&A and marketplace -->
+    <section class="col-span-2 lg:col-span-2 bg-white rounded-2xl shadow p-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <h2 class="text-lg font-semibold mb-2">Задать вопрос</h2>
+          <select id="topic" class="w-full border p-2 rounded mb-2">
+            <option>HTML</option>
+            <option>CSS</option>
+            <option>Python</option>
+            <option>Презентации</option>
+            <option>Проекты</option>
+          </select>
+          <textarea id="question" placeholder="Введите вопрос" class="w-full border p-2 rounded mb-2"></textarea>
+          <button class="bg-indigo-600 text-white px-4 py-2 rounded" onclick="addQuestion()">Отправить вопрос (+2 балла)</button>
+
+          <hr class="my-4" />
+
+          <h2 class="text-lg font-semibold mb-2">Список вопросов</h2>
+          <div id="questions" class="space-y-3"></div>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-semibold mb-2">Маркетплейс: курсы и консультации</h2>
+
+          <div class="mb-4">
+            <h3 class="font-semibold">Купить консультацию</h3>
+            <select id="mentor-select" class="w-full border p-2 rounded mb-2"></select>
+            <select id="consult-duration" class="w-full border p-2 rounded mb-2">
+              <option value="15">15 мин — 500 ₸</option>
+              <option value="30">30 мин — 900 ₸</option>
+              <option value="60">60 мин — 1500 ₸</option>
+            </select>
+            <button class="bg-green-600 text-white w-full py-2 rounded" onclick="buyConsultation()">Оплатить консультацию</button>
+          </div>
+
+          <div class="mb-4">
+            <h3 class="font-semibold">Подписки</h3>
+            <div class="flex gap-2 mb-2">
+              <div class="flex-1 border p-2 rounded">
+                <p class="font-semibold">Free</p>
+                <p class="text-sm">0 ₸</p>
+                <button class="bg-gray-300 text-black w-full py-1 rounded mt-2" onclick="buySubscription('free')">Выбрать</button>
+              </div>
+              <div class="flex-1 border p-2 rounded">
+                <p class="font-semibold">Pro</p>
+                <p class="text-sm">1 490 ₸ / мес</p>
+                <button class="bg-indigo-600 text-white w-full py-1 rounded mt-2" onclick="buySubscription('pro')">Купить</button>
+              </div>
+              <div class="flex-1 border p-2 rounded">
+                <p class="font-semibold">Premium</p>
+                <p class="text-sm">2 990 ₸ / мес</p>
+                <button class="bg-amber-500 text-white w-full py-1 rounded mt-2" onclick="buySubscription('premium')">Купить</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="font-semibold">Курсы</h3>
+            <div id="courses-list" class="space-y-2"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: leaderboard / finance summary -->
+    <section class="col-span-1 bg-white rounded-2xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-2">Топ пользователей</h2>
+      <div id="leaderboard" class="space-y-2"></div>
+
+      <hr class="my-4" />
+      <h3 class="font-semibold">Финансы (демо)</h3>
+      <p class="text-sm">Баланс платформы: <strong id="platform-balance">0 ₸</strong></p>
+      <p class="text-sm">Транзакций: <strong id="tx-count">0</strong></p>
+    </section>
+
+  </main>
+
+  <!-- Admin Modal -->
+  <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center">
+    <div class="bg-white w-11/12 md:w-3/4 p-4 rounded">
+      <h2 class="text-lg font-semibold mb-2">Панель администратора</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 class="font-semibold">Общая статистика</h3>
+          <p>Баланс платформы: <strong id="admin-platform-balance">0 ₸</strong></p>
+          <p>Всего пользователей: <strong id="admin-users-count">0</strong></p>
+          <p>Всего транзакций: <strong id="admin-tx-count">0</strong></p>
+        </div>
+        <div>
+          <h3 class="font-semibold">Список транзакций</h3>
+          <div id="admin-tx-list" class="max-h-48 overflow-auto border p-2 rounded"></div>
+        </div>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <button class="bg-red-600 text-white px-3 py-1 rounded" onclick="closeAdmin()">Закрыть</button>
+        <button class="bg-sky-600 text-white px-3 py-1 rounded" onclick="exportCSV()">Экспорт CSV</button>
+        <button class="bg-amber-500 text-white px-3 py-1 rounded" onclick="backupAndClearQuestions()">Бэкап и удалить вопросы</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-sm text-slate-500 p-4">© SchoolIT — демо для BICAP Hackaton</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, push, update, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDVGnZMJTrLjkgu12oULmMSJ-X2gEkCJbU",
+  authDomain: "schoolit-23be4.firebaseapp.com",
+  databaseURL: "https://schoolit-23be4-default-rtdb.firebaseio.com",
+  projectId: "schoolit-23be4",
+  storageBucket: "schoolit-23be4.firebasestorage.app",
+  messagingSenderId: "519152271522",
+  appId: "1:519152271522:web:b85947a95cda2936b617fb",
+  measurementId: "G-5HQ517WLFF"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let currentUser = null;
+let data = {
+  users: [],
+  questions: [],
+  courses: [],
+  transactions: [],
+  platformBalance: 0
+};
+
+function listenAll() {
+onValue(ref(db, "users"), snap => {
+  data.users = snap.val() ? Object.values(snap.val()) : [];
+
+  if (currentUser) {
+    currentUser = data.users.find(u => u.name === currentUser.name) || null;
+  }
+
+  console.log('onValue users, count=', data.users.length, currentUser?.name || null);
+  renderLeaderboard();
+  renderMentorList();
+  updateProfileUI();
+});
+
+
+  onValue(ref(db, "questions"), snap => {
+    const val = snap.val();
+    console.log('onValue questions snapshot:', val ? Object.keys(val).length + ' items' : 'no items', val);
+    data.questions = val ? Object.values(val).map(q=>{
+      // Normalize answers: can be array, object or missing in existing DB
+      const answers = q.answers ? (Array.isArray(q.answers) ? q.answers : Object.values(q.answers)) : [];
+      return { ...q, answers };
+    }) : [];
+    data.questions.sort((a,b)=>b.id-a.id);
+    renderQuestions();
+  });
+
+  onValue(ref(db, "courses"), snap => {
+    const val = snap.val();
+    data.courses = val ? Object.values(val) : [];
+    renderCourses();
+  });
+
+  onValue(ref(db, "transactions"), snap => {
+    const val = snap.val();
+    data.transactions = val ? Object.values(val) : [];
+    if (currentUser?.role === "admin") renderAdmin();
+  });
+
+  onValue(ref(db, "platformBalance"), snap => {
+    data.platformBalance = snap.val() || 0;
+    renderLeaderboard();
+  });
+}
+listenAll();
+
+function saveUser(user) {
+  return set(ref(db, "users/" + user.name), user);
+}
+
+function saveQuestion(q) {
+  // Ensure answers is always an array when saving
+  q.answers = q.answers ? (Array.isArray(q.answers) ? q.answers : Object.values(q.answers)) : [];
+  return set(ref(db, "questions/" + q.id), q);
+}
+
+function saveCourse(c) {
+  return set(ref(db, "courses/" + c.id), c);
+}
+
+function addTransaction(tx) {
+  const id = Date.now() + Math.floor(Math.random()*999);
+  tx.id = id;
+  tx.date = new Date().toISOString();
+  set(ref(db, "transactions/" + id), tx);
+}
+
+function setPlatformBalance(v) {
+  set(ref(db, "platformBalance"), v);
+}
+
+// Backup current questions to `questions_backup/<timestamp>` and remove original
+window.backupQuestions = async function() {
+  try {
+    const ts = Date.now();
+    const path = `questions_backup/${ts}`;
+    const obj = {};
+    // build object id->question
+    (data.questions || []).forEach(q => {
+      obj[q.id] = q;
+    });
+    await set(ref(db, path), obj);
+    console.log('backupQuestions: saved', Object.keys(obj).length, 'items to', path);
+    alert('Бэкап создан: ' + path);
+    return path;
+  } catch(e) {
+    console.error('backupQuestions error', e);
+    alert('Ошибка при создании бэкапа — смотрите консоль');
+    throw e;
+  }
+}
+
+window.clearQuestions = async function() {
+  if (!confirm('Вы уверены? Все вопросы будут удалены навсегда.')) return;
+  try {
+    await remove(ref(db, 'questions'));
+    console.log('clearQuestions: removed questions');
+    alert('Все вопросы удалены');
+  } catch(e) {
+    console.error('clearQuestions error', e);
+    alert('Ошибка при удалении вопросов — смотрите консоль');
+    throw e;
+  }
+}
+
+// Convenience: backup then clear (will ask confirmation before clear)
+window.backupAndClearQuestions = async function() {
+  try {
+    const backupPath = await window.backupQuestions();
+    // ask user again before removing
+    if (confirm('Бэкап создан: ' + backupPath + '. Удалить все вопросы?')) {
+      await remove(ref(db, 'questions'));
+      console.log('backupAndClearQuestions: removed questions after backup', backupPath);
+      alert('Вопросы удалены (бэкап: ' + backupPath + ')');
+    } else {
+      console.log('backupAndClearQuestions: user cancelled clear after backup');
+    }
+  } catch(e) {
+    console.error('backupAndClearQuestions error', e);
+    alert('Ошибка при бэкапе/очистке — смотрите консоль');
+  }
+}
+
+// Delete a whole question (only author or admin)
+window.deleteQuestion = async function(qid) {
+  const q = data.questions.find(x=>x.id==qid);
+  if (!q) return alert('Вопрос не найден');
+  if (!currentUser) return alert('Войдите, чтобы удалить');
+  if (!(currentUser.role==='admin' || currentUser.name === q.name))
+    return alert('Удалять можно только свои вопросы или админом');
+  if (!confirm('Удалить вопрос: "' + (q.text?.slice(0,80)||'') + '..." ?')) return;
+  try {
+    // Optimistic remove from local array
+    data.questions = data.questions.filter(x=>x.id!=qid);
+    renderQuestions();
+    // store for undo
+    window._lastDeleted = { type: 'question', qid, question: q };
+    createUndoToast('Вопрос удалён', async ()=>{
+      try {
+        const L = window._lastDeleted;
+        if (!L || L.type!=='question') return;
+        await set(ref(db, 'questions/' + L.qid), L.question);
+        window._lastDeleted = null;
+        renderQuestions();
+        console.log('undo deleteQuestion: restored', L.qid);
+      } catch(e){ console.error('undo deleteQuestion error', e); }
+    });
+    await remove(ref(db, 'questions/' + qid));
+    console.log('deleteQuestion: removed', qid);
+    alert('Вопрос удалён');
+  } catch(e) {
+    console.error('deleteQuestion error', e);
+    alert('Ошибка при удалении вопроса — смотрите консоль');
+  }
+}
+
+// Delete an answer by index (only answer author, question author, or admin)
+window.deleteAnswer = async function(qid, idx) {
+  const q = data.questions.find(x=>x.id==qid);
+  if (!q) return alert('Вопрос не найден');
+  const answers = Array.isArray(q.answers) ? q.answers : (q.answers?Object.values(q.answers):[]);
+  const a = answers[idx];
+  if (!a) return alert('Ответ не найден');
+  if (!currentUser) return alert('Войдите, чтобы удалить');
+  const canDelete = currentUser.role==='admin' || currentUser.name===a.by || currentUser.name===q.name;
+  if (!canDelete) return alert('Удалять ответ можно автору ответа, автору вопроса или админом');
+  if (!confirm('Удалить ответ: "' + (a.text?.slice(0,80)||'') + '..." ?')) return;
+  try {
+    // remove locally
+    answers.splice(idx,1);
+    q.answers = answers;
+    // adjust bestAnswerIndex if needed
+    if (q.bestAnswerIndex != null) {
+      if (q.bestAnswerIndex === idx) q.bestAnswerIndex = null;
+      else if (q.bestAnswerIndex > idx) q.bestAnswerIndex--;
+    }
+    renderQuestions();
+    // Keep undo info
+    window._lastDeleted = {
+      type: 'answer', qid, idx, answer: a, prevQuestion: JSON.parse(JSON.stringify(q))
+    };
+    createUndoToast('Ответ удалён', async ()=>{
+      try {
+        const L = window._lastDeleted;
+        if (!L || L.type!=='answer') return;
+        // restore previous question state
+        await saveQuestion(L.prevQuestion);
+        window._lastDeleted = null;
+        renderQuestions();
+        console.log('undo deleteAnswer: restored', qid);
+      } catch(e) { console.error('undo deleteAnswer error', e); }
+    });
+    await saveQuestion(q);
+    console.log('deleteAnswer: saved question', qid);
+    alert('Ответ удалён');
+  } catch(e) {
+    console.error('deleteAnswer error', e);
+    alert('Ошибка при удалении ответа — смотрите консоль');
+  }
+}
+
+// Helper: create a small undo toast (7s)
+function createUndoToast(text, onUndo) {
+  try {
+    let toast = document.getElementById('undo-toast');
+    if (toast) toast.remove();
+    toast = document.createElement('div');
+    toast.id = 'undo-toast';
+    toast.style.position = 'fixed';
+    toast.style.right = '20px';
+    toast.style.bottom = '20px';
+    toast.style.background = 'rgba(30,30,30,0.9)';
+    toast.style.color = 'white';
+    toast.style.padding = '12px 16px';
+    toast.style.borderRadius = '8px';
+    toast.style.zIndex = 99999;
+    toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+    toast.innerHTML = `<span style="margin-right:12px">${text}</span>`;
+    const btn = document.createElement('button');
+    btn.innerText = 'Отменить';
+    btn.style.background = '#ef4444';
+    btn.style.border = 'none';
+    btn.style.color = 'white';
+    btn.style.padding = '6px 10px';
+    btn.style.borderRadius = '6px';
+    btn.style.cursor = 'pointer';
+    toast.appendChild(btn);
+    document.body.appendChild(toast);
+    let cleared = false;
+    const cleanup = ()=>{ if (toast){ toast.remove(); } window._lastDeleted = null; cleared = true; };
+    btn.addEventListener('click', async ()=>{
+      if (cleared) return;
+      try { await onUndo(); } catch(e){ console.error('undo handler error', e); }
+      cleanup();
+    });
+    // auto clear after 7s
+    setTimeout(()=>{ if (!cleared) cleanup(); }, 7000);
+  } catch(e) { console.error('createUndoToast error', e); }
+}
+
+window.register = function() {
+  const name = document.getElementById("reg-name").value.trim();
+  const role = document.getElementById("reg-role").value;
+  if (!name) return alert("Введите имя");
+  if (data.users.find(u=>u.name.toLowerCase()===name.toLowerCase()))
+    return alert("Пользователь уже существует");
+  const user = { name, role, points: 10, credits: 0, lastLogin: null, mentorBalance: 0, subscription: "free", subscriptionUntil: null };
+  saveUser(user);
+  alert("Регистрация успешна! Вам начислено 10 баллов.");
+};
+
+window.login = function() {
+  const name = document.getElementById("login-name").value.trim();
+  const user = data.users.find(u=>u.name.toLowerCase()===name.toLowerCase());
+  if (!user) return alert("Пользователь не найден");
+  currentUser = user;
+  document.getElementById("auth-block").classList.add("hidden");
+  document.getElementById("profile-block").classList.remove("hidden");
+  document.getElementById("btn-logout").classList.remove("hidden");
+  updateProfileUI();
+  renderQuestions();
+  renderLeaderboard();
+  renderMentorList();
+  renderCourses();
+};
+
+window.logout = function() {
+  currentUser = null;
+  document.getElementById("auth-block").classList.remove("hidden");
+  document.getElementById("profile-block").classList.add("hidden");
+  document.getElementById("btn-logout").classList.add("hidden");
+};
+
+function updateProfileUI() {
+  if (!currentUser) return;
+  document.getElementById("profile-name").innerText = currentUser.name;
+  document.getElementById("profile-role").innerText = currentUser.role;
+  document.getElementById("profile-points").innerText = currentUser.points;
+  document.getElementById("profile-credits").innerText = currentUser.credits;
+  document.getElementById("profile-level").innerText = getLevel(currentUser.points);
+  document.getElementById("user-info").innerText = `${currentUser.name} • ${currentUser.credits} ₸`;
+}
+
+function getLevel(points) {
+  if (points < 50) return "Новичок";
+  if (points < 150) return "Активный";
+  if (points < 400) return "Эксперт";
+  return "Профи";
+}
+
+window.addQuestion = function() {
+  if (!currentUser) return alert("Войдите чтобы задать вопрос");
+  const topic = document.getElementById("topic").value;
+  const text = document.getElementById("question").value.trim();
+  if (!text) return alert("Введите вопрос");
+  const q = { id: Date.now(), name: currentUser.name, topic, text, answers: [], bestAnswerIndex: null };
+  console.log('addQuestion -> saving', q);
+
+  // Optimistic UI: render immediately so user sees the question right away
+  try {
+    data.questions = [q, ...data.questions];
+    data.questions.sort((a,b)=>b.id-a.id);
+    renderQuestions();
+    document.getElementById("question").value = "";
+  } catch(e) {
+    console.warn('optimistic render failed', e);
+  }
+
+  saveQuestion(q)
+    .then(()=> {
+      console.log('saveQuestion: success', q);
+      try { alert('Вопрос успешно сохранён'); } catch(e){}
+    })
+    .catch(err=>{
+      console.error('saveQuestion: error', err);
+      try { alert('Ошибка при сохранении вопроса — проверьте консоль'); } catch(e){}
+    });
+
+  // начисление баллов пользователю
+  currentUser.points += 2;
+  saveUser(currentUser).then(()=>{
+    console.log('saveUser after addQuestion: success', currentUser.name, currentUser.points);
+    updateProfileUI();
+  }).catch(e=>{
+    console.error('saveUser error', e);
+  });
+};
+
+window.addAnswer = function(qid) {
+  if (!currentUser) return alert("Войдите чтобы ответить");
+  const input = document.getElementById("answer-"+qid);
+  const text = input.value.trim();
+  if (!text) return;
+  const q = data.questions.find(x=>x.id==qid);
+  if (!q) return;
+  q.answers.push({by: currentUser.name, text, points:5});
+  saveQuestion(q);
+  currentUser.points += 5;
+  saveUser(currentUser);
+  input.value = "";
+};
+
+window.markBest = function(qid, idx) {
+  const q = data.questions.find(x=>x.id==qid);
+  if (!q) return;
+  q.bestAnswerIndex = idx;
+  saveQuestion(q);
+  const ans = q.answers[idx];
+  const author = data.users.find(u=>u.name===ans.by);
+  if (author) {
+    author.points += 15;
+    saveUser(author);
+  }
+};
+
+function renderQuestions() {
+  const block = document.getElementById("questions");
+  block.innerHTML = "";
+  console.log('renderQuestions: will render', data.questions.length, 'items');
+  if (!data.questions || data.questions.length === 0) {
+    block.innerHTML = "<p class='text-sm text-slate-500'>Вопросов пока нет</p>";
+    return;
+  }
+  data.questions.forEach(q=>{
+    const div = document.createElement("div");
+    div.className = "border rounded p-3 bg-white";
+    // Ensure answers is an array (normalized earlier) and safe to map
+    const answers = Array.isArray(q.answers) ? q.answers : (q.answers ? Object.values(q.answers) : []);
+    div.innerHTML = `
+      <p class='font-semibold'>${q.name} • ${q.topic}</p>
+      <p class='mb-2'>${q.text}</p>
+      <div class='ml-4'>
+        ${answers.map((a,i)=>`
+          <div class="p-2 rounded mb-1 ${q.bestAnswerIndex===i?"bg-emerald-50":""}">
+            <div class='flex justify-between'>
+              <div><strong>${a.by}</strong> — ${a.text}</div>
+              <div class='text-sm flex items-center gap-2'>+${a.points}
+                ${ (currentUser && (currentUser.role==='admin' || currentUser.name===a.by || currentUser.name===q.name))
+                  ? `<button class=\"ml-2 text-xs text-red-600 underline\" onclick=\"deleteAnswer(${q.id},${i})\">Удалить</button>`
+                  : ''
+                }
+              </div>
+            </div>
+            ${
+              currentUser && q.bestAnswerIndex===null && currentUser.name===q.name
+              ? `<button class="bg-amber-500 text-white px-2 py-1 rounded mt-2" onclick="markBest(${q.id},${i})">Лучший ответ</button>`
+              : ""
+            }
+          </div>
+        `).join("")}
+      </div>
+      <div class='mt-2 flex gap-2'>
+        <input id='answer-${q.id}' placeholder='Написать ответ' class='border p-1 rounded w-full' />
+        <button class='bg-green-600 text-white px-3 rounded' onclick='addAnswer(${q.id})'>Ответить</button>
+        ${ (currentUser && (currentUser.role==='admin' || currentUser.name===q.name))
+          ? `<button class=\"bg-red-600 text-white px-3 rounded ml-2\" onclick=\"deleteQuestion(${q.id})\">Удалить вопрос</button>`
+          : ''
+        }
+      </div>`;
+    block.appendChild(div);
+  });
+}
+
+function renderLeaderboard() {
+  const lb = document.getElementById("leaderboard");
+  lb.innerHTML = "";
+  const users = [...data.users].sort((a,b)=>b.points-a.points).slice(0,10);
+  users.forEach((u,i)=>{
+    const el = document.createElement("div");
+    el.className = "flex justify-between items-center p-2 border rounded";
+    el.innerHTML = `
+      <div>
+        <strong>#${i+1} ${u.name}</strong>
+        <div class='text-xs'>${u.role} • ${getLevel(u.points)}</div>
+      </div>
+      <div>${u.points} / ${u.credits} ₸</div>`;
+    lb.appendChild(el);
+  });
+  document.getElementById("platform-balance").innerText = data.platformBalance + " ₸";
+  document.getElementById("tx-count").innerText = data.transactions.length;
+}
+
+function renderMentorList() {
+  const sel = document.getElementById("mentor-select");
+  sel.innerHTML = "";
+  const mentors = data.users.filter(u=>u.role==="mentor");
+  if (mentors.length===0) {
+    sel.innerHTML = "<option>Нет наставников</option>";
+    return;
+  }
+  mentors.forEach(m=>{
+    const opt = document.createElement("option");
+    opt.value = m.name;
+    opt.innerText = `${m.name} • ${m.points} балл`;
+    sel.appendChild(opt);
+  });
+}
+
+function renderCourses() {
+  const node = document.getElementById("courses-list");
+  node.innerHTML = "";
+  if (data.courses.length===0) {
+    node.innerHTML = "<p class='text-sm'>Курсы отсутствуют</p>";
+    return;
+  }
+  data.courses.forEach(c=>{
+    const div = document.createElement("div");
+    div.className = "border p-2 rounded flex justify-between items-center";
+    div.innerHTML = `
+      <div><strong>${c.title}</strong><div class="text-xs">Автор: ${c.author}</div></div>
+      <div>
+        <div class="text-sm mb-2">${c.price} ₸</div>
+        <button class='bg-indigo-600 text-white px-2 py-1 rounded' onclick='buyCourse(${c.id})'>Купить</button>
+      </div>`;
+    node.appendChild(div);
+  });
+}
+
+window.createCourse = function() {
+  if (!currentUser || currentUser.role!=="mentor")
+    return alert("Только наставник может создавать курс");
+  const title = document.getElementById("course-title").value.trim();
+  const price = Number(document.getElementById("course-price").value);
+  if (!title || !price) return alert("Введите данные");
+  const c = { id: Date.now(), title, price, author: currentUser.name };
+  saveCourse(c);
+};
+
+window.buyCourse = function(id) {
+  const c = data.courses.find(x=>x.id==id);
+  if (!c) return;
+  if (currentUser.credits < c.price)
+    return alert("Недостаточно средств");
+  currentUser.credits -= c.price;
+  const platformCut = Math.round(c.price * 0.20);
+  const authorShare = c.price - platformCut;
+  setPlatformBalance(data.platformBalance + platformCut);
+  const author = data.users.find(u=>u.name===c.author);
+  if (author) {
+    author.mentorBalance += authorShare;
+    saveUser(author);
+  }
+  saveUser(currentUser);
+  addTransaction({ type: "course_buy", user: currentUser.name, amount: c.price, platformCut, author: c.author, authorShare, meta: "buy course" });
+};
+
+function renderAdmin() {
+  document.getElementById("admin-platform-balance").innerText = data.platformBalance + " ₸";
+  document.getElementById("admin-users-count").innerText = data.users.length;
+  document.getElementById("admin-tx-count").innerText = data.transactions.length;
+  const list = document.getElementById("admin-tx-list");
+  list.innerHTML = "";
+  data.transactions.forEach(t=>{
+    const el = document.createElement("div");
+    el.className = "text-xs border-b py-1";
+    el.innerText = `${t.date} | ${t.type} | ${t.user || ""} | ${t.amount} ₸ | ${t.meta || ""}`;
+    list.appendChild(el);
+  });
+}
+
+window.openAdmin = function() {
+  if (!currentUser || currentUser.role!=="admin")
+    return alert("Только админ!");
+  document.getElementById("admin-modal").classList.remove("hidden");
+  renderAdmin();
+};
+
+window.closeAdmin = function() {
+  document.getElementById("admin-modal").classList.add("hidden");
+};
+</script>
+</body>
+</html>
